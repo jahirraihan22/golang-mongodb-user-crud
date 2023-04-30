@@ -71,3 +71,19 @@ func (u *UserManagement) Delete(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, "Deleted successfully!")
 
 }
+
+func (u *UserManagement) GetAll(ctx echo.Context) error {
+	findUser, err := models.UserInfoDatabase().Find(context.TODO(), bson.M{})
+	if err != nil {
+		return err
+	}
+	var allUsers []users.User
+	for findUser.Next(context.Background()) {
+		var user users.User
+		if err := findUser.Decode(&user); err != nil {
+			return err
+		}
+		allUsers = append(allUsers, user)
+	}
+	return ctx.JSON(http.StatusOK, allUsers)
+}

@@ -14,4 +14,5 @@ func userApiRouting(userApiGroup *echo.Group) {
 	userApiGroup.POST("", interfaces.GetUserCRUD().Create)
 	userApiGroup.GET("/:id", interfaces.GetUserCRUD().Get)
 	userApiGroup.DELETE("/:id", interfaces.GetUserCRUD().Delete)
+	userApiGroup.GET("/all", interfaces.GetUserCRUD().GetAll)
 }

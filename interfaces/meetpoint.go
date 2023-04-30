@@ -10,7 +10,7 @@ type Crud interface {
 	//Update(ctx echo.Context) error
 	Delete(ctx echo.Context) error
 	Get(ctx echo.Context) error
-	//GetListOfData(ctx echo.Context) error
+	GetAll(ctx echo.Context) error
 }
 
 func GetUserCRUD() Crud {
