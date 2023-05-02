@@ -77,13 +77,36 @@ func (u *UserManagement) GetAll(ctx echo.Context) error {
 	if err != nil {
 		return err
 	}
-	var allUsers []users.User
+	var allUsers []users.UserResponse
 	for findUser.Next(context.Background()) {
-		var user users.User
+		var user users.UserResponse
 		if err := findUser.Decode(&user); err != nil {
 			return err
 		}
 		allUsers = append(allUsers, user)
 	}
 	return ctx.JSON(http.StatusOK, allUsers)
+}
+
+func (u *UserManagement) Update(ctx echo.Context) error {
+	userID, err := primitive.ObjectIDFromHex(ctx.Param("id"))
+	if err != nil {
+		return ctx.JSON(http.StatusOK, "[ERROR]: Operation Failed 1")
+	}
+
+	userRequestDTO := new(users.UserRequestDTO)
+	err = ctx.Bind(userRequestDTO)
+	if err != nil {
+		return ctx.JSON(http.StatusOK, "[ERROR]: Operation Failed 2")
+	}
+
+	user := new(users.User)
+	user.RequestDtoToObject(*userRequestDTO)
+	updateData := bson.M{"$set": user}
+	result := models.UserInfoDatabase().FindOneAndUpdate(context.TODO(), bson.M{"_id": userID}, updateData)
+	if result.Err() != nil {
+		return ctx.JSON(http.StatusOK, "[ERROR]: Operation Failed 3 ")
+	}
+
+	return ctx.JSON(http.StatusOK, "Updated Successfully")
 }

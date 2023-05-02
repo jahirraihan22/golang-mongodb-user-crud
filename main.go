@@ -3,7 +3,7 @@ package main
 import (
 	"github.com/labstack/echo/v4"
 	"net/http"
-	"ums/router"
+	"ums/routes"
 	"ums/src/models"
 )
 
@@ -16,6 +16,6 @@ func main() {
 		return c.JSON(http.StatusOK, "Running..........")
 	})
 
-	router.Init(server)
+	routes.Init(server)
 	server.Logger.Fatal(server.Start(":12375"))
 }

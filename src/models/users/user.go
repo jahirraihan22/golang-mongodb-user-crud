@@ -17,3 +17,10 @@ func (u *User) RequestDtoToObject(requestDTO UserRequestDTO) {
 	u.Gender = requestDTO.Gender
 	u.Age = requestDTO.Age
 }
+
+type UserResponse struct {
+	ID     string `bson:"_id"`
+	Name   string `bson:"name"`
+	Gender string `bson:"gender"`
+	Age    int    `bson:"age"`
+}
