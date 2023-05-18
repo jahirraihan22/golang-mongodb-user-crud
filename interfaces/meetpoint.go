@@ -13,6 +13,15 @@ type Crud interface {
 	GetAll(ctx echo.Context) error
 }
 
+type Command interface {
+	CurlRequest(ctx echo.Context) error
+	CreateVm(ctx echo.Context) error
+}
+
 func GetUserCRUD() Crud {
 	return &service.UserManagement{}
+}
+
+func GetCommand() Command {
+	return &service.CommandManagement{}
 }
