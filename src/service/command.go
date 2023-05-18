@@ -34,10 +34,7 @@ func (cm *CommandManagement) CreateVm(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, "VM created successfully")
 }
 
-// Parameters:
-//   param: executable bash file path.
-//
-
+// param: executable bash file path.
 func execCommand(file string) error {
 	cmd := exec.Command("bash", file)
 
