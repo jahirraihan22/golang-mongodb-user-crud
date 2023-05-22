@@ -1,4 +1,4 @@
-package models
+package database
 
 import (
 	"context"
@@ -10,7 +10,9 @@ import (
 var once sync.Once
 var Client *mongo.Database
 
-func InitializeDatabase() *mongo.Database {
+type DB struct{}
+
+func Init() *mongo.Database {
 	once.Do(func() {
 		Client = createDbInstance()
 	})
@@ -28,6 +30,7 @@ func createDbInstance() *mongo.Database {
 	return c
 }
 
-func UserInfoDatabase() *mongo.Collection {
-	return Client.Collection("users")
+// GetClient getting database client
+func (db *DB) GetClient() *mongo.Database {
+	return Client
 }

@@ -1,15 +1,14 @@
 package main
 
 import (
+	"github.com/labstack/echo/v4"
 	"net/http"
 	"ums/routes"
-	"ums/src/models"
-
-	"github.com/labstack/echo/v4"
+	"ums/src/database"
 )
 
 func main() {
-	models.InitializeDatabase()
+	database.Init()
 
 	var server = echo.New()
 

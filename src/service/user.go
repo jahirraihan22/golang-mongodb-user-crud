@@ -12,11 +12,13 @@ import (
 	"net/http"
 	"time"
 	"ums/src/models"
-	"ums/src/models/users"
 	"ums/src/utilities/common"
 )
 
-type UserManagement struct{}
+type UserManagement struct {
+	Collection models.UserModel
+}
+
 type jwtCustomClaims struct {
 	Name  string `json:"name"`
 	Email string `json:"email"`
@@ -24,8 +26,8 @@ type jwtCustomClaims struct {
 }
 
 func (u *UserManagement) Create(ctx echo.Context) error {
-	user := new(users.User)
-	userRequest := new(users.UserRequestDTO)
+	user := new(models.User)
+	userRequest := new(models.UserRequestDTO)
 
 	err := ctx.Bind(userRequest)
 
@@ -54,7 +56,7 @@ func (u *UserManagement) Create(ctx echo.Context) error {
 
 	userRequest.Password = string(hashedPassword)
 	user.RequestDtoToObject(*userRequest)
-	insertOneResult, err := models.UserInfoDatabase().InsertOne(context.TODO(), user)
+	insertOneResult, err := u.Collection.Get().InsertOne(context.TODO(), user)
 	if err != nil {
 		return ctx.JSON(http.StatusOK, "[ERROR]: "+err.Error())
 	}
@@ -74,11 +76,11 @@ func (u *UserManagement) Get(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, userInfo)
 }
 
-func (u *UserManagement) GetUserById(userObjID primitive.ObjectID) users.User {
-	var user users.User
+func (u *UserManagement) GetUserById(userObjID primitive.ObjectID) models.User {
+	var user models.User
 
-	findUser := models.UserInfoDatabase().FindOne(context.TODO(), bson.M{"_id": userObjID})
-	userInfo := new(users.User)
+	findUser := u.Collection.Get().FindOne(context.TODO(), bson.M{"_id": userObjID})
+	userInfo := new(models.User)
 	err := findUser.Decode(userInfo)
 	if err != nil {
 		println("[ERROR]", err)
@@ -95,7 +97,7 @@ func (u *UserManagement) Delete(ctx echo.Context) error {
 	if err != nil {
 		return err
 	}
-	findOneAndDelete := models.UserInfoDatabase().FindOneAndDelete(context.TODO(), bson.M{"_id": userObjID})
+	findOneAndDelete := u.Collection.Get().FindOneAndDelete(context.TODO(), bson.M{"_id": userObjID})
 
 	if findOneAndDelete.Err() != nil {
 		return findOneAndDelete.Err()
@@ -106,13 +108,13 @@ func (u *UserManagement) Delete(ctx echo.Context) error {
 }
 
 func (u *UserManagement) GetAll(ctx echo.Context) error {
-	findUser, err := models.UserInfoDatabase().Find(context.TODO(), bson.M{})
+	findUser, err := u.Collection.Get().Find(context.TODO(), bson.M{})
 	if err != nil {
 		return err
 	}
-	var allUsers []users.UserResponse
+	var allUsers []models.UserResponse
 	for findUser.Next(context.Background()) {
-		var user users.UserResponse
+		var user models.UserResponse
 		if err := findUser.Decode(&user); err != nil {
 			return err
 		}
@@ -127,7 +129,7 @@ func (u *UserManagement) Update(ctx echo.Context) error {
 		return ctx.JSON(http.StatusOK, "[ERROR]: Operation Failed 1")
 	}
 
-	userRequestDTO := new(users.UserRequestDTO)
+	userRequestDTO := new(models.UserRequestDTO)
 	err = ctx.Bind(userRequestDTO)
 
 	if err != nil {
@@ -140,10 +142,10 @@ func (u *UserManagement) Update(ctx echo.Context) error {
 		return ctx.JSON(http.StatusOK, echo.Map{"message": "Operation failed"})
 	}
 
-	user := new(users.User)
+	user := new(models.User)
 	user.RequestDtoToObject(*userRequestDTO)
 	updateData := bson.M{"$set": user}
-	result := models.UserInfoDatabase().FindOneAndUpdate(context.TODO(), bson.M{"_id": userID}, updateData)
+	result := u.Collection.Get().FindOneAndUpdate(context.TODO(), bson.M{"_id": userID}, updateData)
 	if result.Err() != nil {
 		return ctx.JSON(http.StatusOK, "[ERROR]: Operation Failed 3 ")
 	}
@@ -151,10 +153,10 @@ func (u *UserManagement) Update(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, "Updated Successfully")
 }
 
-func (u *UserManagement) GetByEmail(email string) users.UserResponse {
-	var res users.UserResponse
-	findOne := models.UserInfoDatabase().FindOne(context.TODO(), bson.M{"email": email})
-	userInfo := new(users.UserResponse)
+func (u *UserManagement) GetByEmail(email string) models.UserResponse {
+	var res models.UserResponse
+	findOne := u.Collection.Get().FindOne(context.TODO(), bson.M{"email": email})
+	userInfo := new(models.UserResponse)
 	err := findOne.Decode(userInfo)
 	if err != nil {
 		log.Println("[ERROR]", err)
@@ -165,8 +167,8 @@ func (u *UserManagement) GetByEmail(email string) users.UserResponse {
 }
 
 func Login(ctx echo.Context) error {
-	//var user users.User
-	userLoginRequest := new(users.UserAuthDTO)
+	//var user models.User
+	userLoginRequest := new(models.UserAuthDTO)
 
 	if err := ctx.Bind(userLoginRequest); err != nil {
 		return err
@@ -185,7 +187,7 @@ func Login(ctx echo.Context) error {
 		return ctx.JSON(http.StatusOK, "Password does not match")
 	}
 
-	// Set payload in jwt
+	// Get payload in jwt
 	claims := &jwtCustomClaims{
 		getUser.Name,
 		getUser.Email,

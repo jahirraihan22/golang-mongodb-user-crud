@@ -1,4 +1,9 @@
-package users
+package models
+
+import (
+	"go.mongodb.org/mongo-driver/mongo"
+	"ums/src/database"
+)
 
 type User struct {
 	Name     string `bson:"name"`
@@ -41,4 +46,11 @@ type UserAuthData struct {
 type UserAuthDTO struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
+}
+
+type UserModel struct{}
+
+func (um *UserModel) Get() *mongo.Collection {
+	var db database.DB
+	return db.GetClient().Collection("users")
 }

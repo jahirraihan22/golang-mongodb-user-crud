@@ -38,7 +38,7 @@ func (cm *CommandManagement) CreateVm(ctx echo.Context) error {
 func execCommand(file string) error {
 	cmd := exec.Command("bash", file)
 
-	// Set the output of the command to os.Stdout
+	// Get the output of the command to os.Stdout
 	cmd.Stdout = os.Stdout
 
 	return cmd.Run()
