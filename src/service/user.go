@@ -13,6 +13,7 @@ import (
 	"time"
 	"ums/src/models"
 	"ums/src/models/users"
+	"ums/src/utilities/common"
 )
 
 type UserManagement struct{}
@@ -26,15 +27,18 @@ func (u *UserManagement) Create(ctx echo.Context) error {
 	user := new(users.User)
 	userRequest := new(users.UserRequestDTO)
 
-	if err := ctx.Bind(userRequest); err != nil {
+	err := ctx.Bind(userRequest)
+
+	if err != nil {
 		print(err)
 		return ctx.JSON(http.StatusOK, echo.Map{"message": "Something wrong"})
 	}
 
-	if userRequest.Name == "" {
-
+	err = common.LocalValidator.Struct(userRequest)
+	if err != nil {
+		print(err.Error())
+		return ctx.JSON(http.StatusOK, echo.Map{"message": "Operation failed"})
 	}
-
 	checkIfExist := u.GetByEmail(userRequest.Email)
 
 	if checkIfExist.ID != "" {
@@ -125,8 +129,15 @@ func (u *UserManagement) Update(ctx echo.Context) error {
 
 	userRequestDTO := new(users.UserRequestDTO)
 	err = ctx.Bind(userRequestDTO)
+
 	if err != nil {
-		return ctx.JSON(http.StatusOK, "[ERROR]: Operation Failed 2")
+		return ctx.JSON(http.StatusOK, echo.Map{"message": "Operation Failed 2"})
+	}
+
+	err = common.LocalValidator.Struct(userRequestDTO)
+	if err != nil {
+		print(err.Error())
+		return ctx.JSON(http.StatusOK, echo.Map{"message": "Operation failed"})
 	}
 
 	user := new(users.User)

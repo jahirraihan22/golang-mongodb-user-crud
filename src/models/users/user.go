@@ -9,11 +9,11 @@ type User struct {
 }
 
 type UserRequestDTO struct {
-	Name     string `json:"name"`
+	Name     string `json:"name" validate:"required"`
 	Gender   string `json:"gender"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
-	Age      int    `json:"age"`
+	Email    string `json:"email" validate:"required"`
+	Password string `json:"password" validate:"required"`
+	Age      int    `json:"age" validate:"min=18,max=30"`
 }
 
 func (u *User) RequestDtoToObject(requestDTO UserRequestDTO) {
