@@ -1,18 +1,23 @@
 package routes
 
 import (
-	"ums/interfaces"
-
+	echojwt "github.com/labstack/echo-jwt/v4"
 	"github.com/labstack/echo/v4"
+	"ums/interfaces"
+	"ums/src/service"
 )
 
 func Init(echo *echo.Echo) {
 	var userApiGroup = echo.Group("/api/user")
+	userApiGroup.Use(echojwt.WithConfig(service.MiddlewareControl()))
 	userApiRouting(userApiGroup)
 
 	var externalCommandApiGroup = echo.Group("/api/command")
-
+	externalCommandApiGroup.Use(echojwt.WithConfig(service.MiddlewareControl()))
 	externalCommandApiRouting(externalCommandApiGroup)
+
+	// without group
+	echo.POST("/login", service.Login) // login
 }
 
 func userApiRouting(userApiGroup *echo.Group) {

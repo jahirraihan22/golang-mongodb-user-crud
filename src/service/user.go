@@ -2,24 +2,53 @@ package service
 
 import (
 	"context"
+	"github.com/golang-jwt/jwt/v5"
+	echojwt "github.com/labstack/echo-jwt/v4"
 	"github.com/labstack/echo/v4"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"golang.org/x/crypto/bcrypt"
+	"log"
 	"net/http"
+	"time"
 	"ums/src/models"
 	"ums/src/models/users"
 )
 
 type UserManagement struct{}
+type jwtCustomClaims struct {
+	Name  string `json:"name"`
+	Email string `json:"email"`
+	jwt.RegisteredClaims
+}
 
 func (u *UserManagement) Create(ctx echo.Context) error {
 	user := new(users.User)
 	userRequest := new(users.UserRequestDTO)
 
 	if err := ctx.Bind(userRequest); err != nil {
-		return err
+		print(err)
+		return ctx.JSON(http.StatusOK, echo.Map{"message": "Something wrong"})
 	}
 
+	if userRequest.Name == "" {
+
+	}
+
+	checkIfExist := u.GetByEmail(userRequest.Email)
+
+	if checkIfExist.ID != "" {
+		print("EXIST")
+		return ctx.JSON(http.StatusOK, echo.Map{"message": "Email already exist"})
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(userRequest.Password), bcrypt.DefaultCost)
+	if err != nil {
+		print(err)
+		return ctx.JSON(http.StatusOK, echo.Map{"message": "Something wrong"})
+	}
+
+	userRequest.Password = string(hashedPassword)
 	user.RequestDtoToObject(*userRequest)
 	insertOneResult, err := models.UserInfoDatabase().InsertOne(context.TODO(), user)
 	if err != nil {
@@ -109,4 +138,71 @@ func (u *UserManagement) Update(ctx echo.Context) error {
 	}
 
 	return ctx.JSON(http.StatusOK, "Updated Successfully")
+}
+
+func (u *UserManagement) GetByEmail(email string) users.UserResponse {
+	var res users.UserResponse
+	findOne := models.UserInfoDatabase().FindOne(context.TODO(), bson.M{"email": email})
+	userInfo := new(users.UserResponse)
+	err := findOne.Decode(userInfo)
+	if err != nil {
+		log.Println("[ERROR]", err)
+		return res
+	}
+	res = *userInfo
+	return res
+}
+
+func Login(ctx echo.Context) error {
+	//var user users.User
+	userLoginRequest := new(users.UserAuthDTO)
+
+	if err := ctx.Bind(userLoginRequest); err != nil {
+		return err
+	}
+
+	u := new(UserManagement)
+	getUser := u.GetByEmail(userLoginRequest.Email)
+	if getUser.Email == "" {
+		return ctx.JSON(http.StatusOK, "User does not exist")
+	}
+
+	err := bcrypt.CompareHashAndPassword([]byte(getUser.Password), []byte(userLoginRequest.Password))
+
+	if err != nil {
+		print(err)
+		return ctx.JSON(http.StatusOK, "Password does not match")
+	}
+
+	// Set payload in jwt
+	claims := &jwtCustomClaims{
+		getUser.Name,
+		getUser.Email,
+		jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 72)),
+		},
+	}
+
+	// Create token with claims
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+	// Generate encoded token and send it as response.
+	t, err := token.SignedString([]byte("secret"))
+	if err != nil {
+		return err
+	}
+
+	return ctx.JSON(http.StatusOK, echo.Map{
+		"token": t,
+	})
+}
+
+func MiddlewareControl() echojwt.Config {
+	config := echojwt.Config{
+		NewClaimsFunc: func(c echo.Context) jwt.Claims {
+			return new(jwtCustomClaims)
+		},
+		SigningKey: []byte("secret"),
+	}
+	return config
 }
